@@ -28,7 +28,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         <div className="fixed inset-y-0 left-0 z-40 w-full overflow-y-auto bg-white px-6 pb-4 dark:bg-gray-900 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10">
           <div className="flex h-16 shrink-0 items-center">
             <div className="flex items-center">
-              <AlertTriangle className="h-8 w-8 text-primary-600" />
+              <AlertTriangle className="h-8 w-8 text-blue-600" />
               <h1 className="ml-2 text-xl font-bold text-gray-900 dark:text-white">
                 ThreatIntel
               </h1>
@@ -52,8 +52,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                       clsx(
                         'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold',
                         isActive
-                          ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/50 dark:text-primary-400'
-                          : 'text-gray-700 hover:bg-gray-50 hover:text-primary-600 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-primary-400'
+                          ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/50 dark:text-blue-400'
+                          : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-blue-400'
                       )
                     }
                     onClick={onClose}
@@ -72,7 +72,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
         <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-6 pb-4 dark:border-gray-700 dark:bg-gray-900">
           <div className="flex h-16 shrink-0 items-center">
-            <AlertTriangle className="h-8 w-8 text-primary-600" />
+            <AlertTriangle className="h-8 w-8 text-blue-600" />
             <h1 className="ml-2 text-xl font-bold text-gray-900 dark:text-white">
               ThreatIntel
             </h1>
@@ -89,8 +89,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                           clsx(
                             'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold',
                             isActive
-                              ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/50 dark:text-primary-400'
-                              : 'text-gray-700 hover:bg-gray-50 hover:text-primary-600 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-primary-400'
+                              ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/50 dark:text-blue-400'
+                              : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-blue-400'
                           )
                         }
                       >

@@ -12,6 +12,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
+  register: (username: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
   isAuthenticated: boolean;
@@ -47,6 +48,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.setItem('token', response.token);
   };
 
+  const register = async (username: string, email: string, password: string) => {
+    const response = await authService.register({ username, email, password });
+    setUser(response.user);
+    localStorage.setItem('token', response.token);
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem('token');
@@ -56,6 +63,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const value = {
     user,
     login,
+    register,
     logout,
     loading,
     isAuthenticated: !!user,

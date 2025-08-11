@@ -60,7 +60,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
               {user?.username}
             </span>
             <div className="flex items-center gap-x-2">
-              <span className="inline-flex items-center rounded-full bg-primary-100 px-2.5 py-0.5 text-xs font-medium text-primary-800 dark:bg-primary-900 dark:text-primary-200">
+              <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                 {user?.role}
               </span>
               <button

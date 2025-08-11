@@ -76,15 +76,6 @@ const ThreatChart: React.FC<ThreatChartProps> = ({ data, type }) => {
           },
         },
       },
-      tooltip: {
-        callbacks: {
-          label: (context: any) => {
-            const total = context.dataset.data.reduce((sum: number, val: number) => sum + val, 0);
-            const percentage = ((context.parsed * 100) / total).toFixed(1);
-            return `${context.label}: ${context.parsed} (${percentage}%)`;
-          },
-        },
-      },
     },
     scales: type === 'bar' ? {
       y: {

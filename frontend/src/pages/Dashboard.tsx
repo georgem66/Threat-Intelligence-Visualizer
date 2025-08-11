@@ -43,8 +43,9 @@ const Dashboard: React.FC = () => {
       setLoading(true);
       const data = await analyticsService.getDashboard();
       setDashboardData(data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load dashboard data');
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      setError(error.message || 'Failed to load dashboard data');
     } finally {
       setLoading(false);
     }
@@ -53,7 +54,7 @@ const Dashboard: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }

@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import ThreatsPage from './pages/Threats';
 import AnalyticsPage from './pages/Analytics';
 import SettingsPage from './pages/Settings';
+import NotFound from './pages/NotFound';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
                 <Route path="settings" element={<SettingsPage />} />
               </Route>
             </Route>
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </Router>
       </AuthProvider>

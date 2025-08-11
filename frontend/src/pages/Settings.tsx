@@ -44,7 +44,7 @@ const SettingsPage: React.FC = () => {
               Role
             </label>
             <div className="mt-1">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200 capitalize">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 capitalize">
                 {user?.role}
               </span>
             </div>
@@ -70,8 +70,8 @@ const SettingsPage: React.FC = () => {
             <button
               type="button"
               className={`${
-                isDarkMode ? 'bg-primary-600' : 'bg-gray-200'
-              } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2`}
+                isDarkMode ? 'bg-blue-600' : 'bg-gray-200'
+              } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
               onClick={toggleTheme}
             >
               <span

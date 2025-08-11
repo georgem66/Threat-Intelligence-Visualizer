@@ -42,7 +42,7 @@ const ThreatMap: React.FC = () => {
   if (loading) {
     return (
       <div className="h-64 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -76,7 +76,11 @@ const ThreatMap: React.FC = () => {
     acc[key].severities[threat.severity] = (acc[key].severities[threat.severity] || 0) + threat.count;
     
     return acc;
-  }, {} as Record<string, any>);
+  }, {} as Record<string, GeoThreat & { 
+    totalCount: number; 
+    categories: Record<string, number>; 
+    severities: Record<string, number>; 
+  }>);
 
   return (
     <div className="h-64 rounded-lg overflow-hidden">
@@ -91,7 +95,7 @@ const ThreatMap: React.FC = () => {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         
-        {Object.values(groupedThreats).map((threat: any, index) => {
+        {Object.values(groupedThreats).map((threat, index) => {
           const primarySeverity = Object.entries(threat.severities)
             .sort(([,a], [,b]) => (b as number) - (a as number))[0][0];
           
