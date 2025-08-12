@@ -1,8 +1,4 @@
-/**
- * TypeScript type definitions for the application
- */
-
-// API Response types
+export interface ApiResponse<T = unknown> {
 export interface ApiResponse<T = unknown> {
   success: boolean;
   data: T;
@@ -20,7 +16,6 @@ export interface PaginatedResponse<T = unknown> {
   };
 }
 
-// User types
 export interface User {
   id: string;
   username: string;
@@ -47,7 +42,6 @@ export interface RegisterRequest {
   role?: 'admin' | 'analyst' | 'viewer';
 }
 
-// Threat types
 export interface Threat {
   id: string;
   type: 'ip' | 'domain' | 'url' | 'hash' | 'email';
@@ -87,7 +81,6 @@ export interface CreateThreatRequest {
   metadata?: Record<string, unknown>;
 }
 
-// Analytics types
 export interface DashboardOverview {
   totalThreats: number;
   threatsLast30Days: number;
@@ -134,7 +127,6 @@ export interface TimeSeriesData {
   total: number;
 }
 
-// Component prop types
 export interface MetricCardProps {
   title: string;
   value: number;
@@ -159,7 +151,6 @@ export interface RecentThreatsProps {
   showSource?: boolean;
 }
 
-// Context types
 export interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
@@ -174,7 +165,6 @@ export interface ThemeContextType {
   setTheme: (isDark: boolean) => void;
 }
 
-// Filter and search types
 export interface ThreatFilters {
   type?: string[];
   category?: string[];
@@ -194,7 +184,6 @@ export interface PaginationParams {
   sortOrder?: 'asc' | 'desc';
 }
 
-// Error types
 export interface ApiError {
   message: string;
   status?: number;
@@ -207,7 +196,6 @@ export interface ValidationError {
   message: string;
 }
 
-// Utility types
 export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
 export type DeepPartial<T> = {
@@ -222,7 +210,6 @@ export type Loading<T> = {
   error: string | null;
 };
 
-// Form types
 export interface FormState<T> {
   values: T;
   errors: Partial<Record<keyof T, string>>;
@@ -237,7 +224,6 @@ export interface SelectOption {
   disabled?: boolean;
 }
 
-// Table types
 export interface TableColumn<T> {
   key: keyof T;
   label: string;

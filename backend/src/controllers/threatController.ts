@@ -1,157 +1,113 @@
-import { Request, Response, NextFunction } from 'express';
-import { Op } from 'sequelize';
+﻿import { Request, Response, NextFunction } from 'express';
 import { validationResult } from 'express-validator';
+import { Op, WhereOptions } from 'sequelize';
 import { Threat } from '../models/Threat';
-import { AuthenticatedRequest } from '../middleware/auth';
+import { AuthRequest } from '../middleware/auth';
 import { createError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
+import { ThreatQueryParams } from '../types';
 
-class ThreatController {
-  async getThreats(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+export const threatController = {
+  async getThreats(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
-      const offset = (page - 1) * limit;
-      
-      const { type, category, severity, source, startDate, endDate } = req.query;
-      
-      const whereClause: any = {};
-      
-      if (type) whereClause.type = type;
-      if (category) whereClause.category = category;
-      if (severity) whereClause.severity = severity;
-      if (source) whereClause.source = { [Op.iLike]: `%${source}%` };
-      
-      if (startDate || endDate) {
-        whereClause.firstSeen = {};
-        if (startDate) whereClause.firstSeen[Op.gte] = new Date(startDate as string);
-        if (endDate) whereClause.firstSeen[Op.lte] = new Date(endDate as string);
-      }
-
-      const { rows: threats, count } = await Threat.findAndCountAll({
-        where: whereClause,
-        order: [['lastSeen', 'DESC']],
-        limit,
-        offset,
-      });
-
-      res.json({
-        threats,
-        pagination: {
-          page,
-          limit,
-          total: count,
-          totalPages: Math.ceil(count / limit),
-        },
-      });
-    } catch (error) {
-      logger.error('Error fetching threats:', error);
-      next(error);
-    }
-  }
-
-  async searchThreats(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const { q, type } = req.query;
-      
-      if (!q) {
-        res.status(400).json({ error: 'Search query is required' });
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        res.status(400).json({ errors: errors.array() });
         return;
       }
 
-      const whereClause: any = {
-        [Op.or]: [
-          { value: { [Op.iLike]: `%${q}%` } },
-          { description: { [Op.iLike]: `%${q}%` } },
-          { tags: { [Op.contains]: [q as string] } },
-        ],
-      };
+      const {
+        page = 1,
+        limit = 20,
+        category,
+        severity,
+        source,
+        country,
+        startDate,
+        endDate,
+        search,
+        sortBy = 'createdAt',
+        sortOrder = 'desc'
+      }: ThreatQueryParams = req.query;
 
-      if (type) {
-        whereClause.type = type;
+      const offset = (page - 1) * limit;
+      const where: WhereOptions = {};
+
+      if (category) {
+        where.category = category;
       }
 
-      const threats = await Threat.findAll({
-        where: whereClause,
-        order: [['lastSeen', 'DESC']],
-        limit: 50,
+      if (severity) {
+        where.severity = severity;
+      }
+
+      if (source) {
+        where.source = { [Op.iLike]: `%${source}%` };
+      }
+
+      if (country) {
+        where['geolocation.country'] = { [Op.iLike]: `%${country}%` };
+      }
+
+      if (startDate || endDate) {
+        where.createdAt = {};
+        if (startDate) {
+          where.createdAt[Op.gte] = new Date(startDate);
+        }
+        if (endDate) {
+          where.createdAt[Op.lte] = new Date(endDate);
+        }
+      }
+
+      if (search) {
+        where[Op.or as any] = [
+          { sourceIp: { [Op.iLike]: `%${search}%` } },
+          { description: { [Op.iLike]: `%${search}%` } },
+          { source: { [Op.iLike]: `%${search}%` } },
+        ];
+      }
+
+      const threats = await Threat.findAndCountAll({
+        where,
+        limit: Number(limit),
+        offset,
+        order: [[sortBy, sortOrder.toUpperCase()]],
       });
-
-      res.json({ threats });
-    } catch (error) {
-      logger.error('Error searching threats:', error);
-      next(error);
-    }
-  }
-
-  async getThreatStats(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const [
-        totalThreats,
-        categoryCounts,
-        severityCounts,
-        recentThreats
-      ] = await Promise.all([
-        Threat.count(),
-        Threat.findAll({
-          attributes: [
-            'category',
-            [Threat.sequelize!.fn('COUNT', '*'), 'count']
-          ],
-          group: 'category',
-          raw: true,
-        }),
-        Threat.findAll({
-          attributes: [
-            'severity',
-            [Threat.sequelize!.fn('COUNT', '*'), 'count']
-          ],
-          group: 'severity',
-          raw: true,
-        }),
-        Threat.count({
-          where: {
-            createdAt: {
-              [Op.gte]: new Date(Date.now() - 24 * 60 * 60 * 1000), // Last 24 hours
-            },
-          },
-        }),
-      ]);
 
       res.json({
-        totalThreats,
-        recentThreats,
-        categoryCounts: categoryCounts.reduce((acc: any, item: any) => {
-          acc[item.category] = parseInt(item.count);
-          return acc;
-        }, {}),
-        severityCounts: severityCounts.reduce((acc: any, item: any) => {
-          acc[item.severity] = parseInt(item.count);
-          return acc;
-        }, {}),
+        threats: threats.rows,
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total: threats.count,
+          pages: Math.ceil(threats.count / Number(limit)),
+        },
       });
     } catch (error) {
-      logger.error('Error fetching threat stats:', error);
+      logger.error('Get threats error:', error);
       next(error);
     }
-  }
+  },
 
-  async getThreatById(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  async getThreatById(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;
       
       const threat = await Threat.findByPk(id);
+      
       if (!threat) {
-        throw createError('Threat not found', 404);
+        res.status(404).json({ error: 'Threat not found' });
+        return;
       }
 
       res.json({ threat });
     } catch (error) {
+      logger.error('Get threat by ID error:', error);
       next(error);
     }
-  }
+  },
 
-  async createThreat(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  async createThreat(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -161,35 +117,51 @@ class ThreatController {
 
       const threatData = req.body;
       
-      // Check if threat already exists
       const existingThreat = await Threat.findOne({
         where: {
-          value: threatData.value,
-          type: threatData.type,
-        },
+          sourceIp: threatData.sourceIp,
+          category: threatData.category,
+          source: threatData.source,
+          isActive: true,
+        }
       });
 
       if (existingThreat) {
-        // Update existing threat
         await existingThreat.update({
-          ...threatData,
+          count: existingThreat.count + 1,
           lastSeen: new Date(),
+          severity: threatData.severity,
+          confidence: Math.max(existingThreat.confidence, threatData.confidence),
         });
-        res.json({ threat: existingThreat, updated: true });
+
+        res.json({
+          message: 'Threat updated',
+          threat: existingThreat,
+        });
         return;
       }
 
-      const threat = await Threat.create(threatData);
-      logger.info(`New threat created: ${threat.type} - ${threat.value}`);
+      const threat = await Threat.create({
+        ...threatData,
+        firstSeen: new Date(),
+        lastSeen: new Date(),
+        count: 1,
+        isActive: true,
+      });
 
-      res.status(201).json({ threat });
+      logger.info(`New threat created: ${threat.sourceIp} (${threat.category})`);
+
+      res.status(201).json({
+        message: 'Threat created successfully',
+        threat,
+      });
     } catch (error) {
-      logger.error('Error creating threat:', error);
+      logger.error('Create threat error:', error);
       next(error);
     }
-  }
+  },
 
-  async updateThreat(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  async updateThreat(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -201,113 +173,157 @@ class ThreatController {
       const updateData = req.body;
 
       const threat = await Threat.findByPk(id);
+      
       if (!threat) {
-        throw createError('Threat not found', 404);
+        res.status(404).json({ error: 'Threat not found' });
+        return;
       }
 
-      await threat.update({
-        ...updateData,
-        lastSeen: new Date(),
-      });
+      await threat.update(updateData);
 
-      res.json({ threat });
+      logger.info(`Threat updated: ID ${id}`);
+
+      res.json({
+        message: 'Threat updated successfully',
+        threat,
+      });
     } catch (error) {
+      logger.error('Update threat error:', error);
       next(error);
     }
-  }
+  },
 
-  async deleteThreat(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  async deleteThreat(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;
 
       const threat = await Threat.findByPk(id);
+      
       if (!threat) {
-        throw createError('Threat not found', 404);
+        res.status(404).json({ error: 'Threat not found' });
+        return;
       }
 
       await threat.destroy();
-      logger.info(`Threat deleted: ${id}`);
+
+      logger.info(`Threat deleted: ID ${id}`);
 
       res.json({ message: 'Threat deleted successfully' });
     } catch (error) {
+      logger.error('Delete threat error:', error);
       next(error);
     }
-  }
+  },
 
-  async bulkCreateThreats(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  async searchThreats(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { q, limit = 10 } = req.query;
+
+      if (!q) {
+        res.status(400).json({ error: 'Search query is required' });
+        return;
+      }
+
+      const threats = await Threat.findAll({
+        where: {
+          [Op.or]: [
+            { sourceIp: { [Op.iLike]: `%${q}%` } },
+            { description: { [Op.iLike]: `%${q}%` } },
+            { source: { [Op.iLike]: `%${q}%` } },
+          ],
+          isActive: true,
+        },
+        limit: Number(limit),
+        order: [['updatedAt', 'DESC']],
+      });
+
+      res.json({ threats });
+    } catch (error) {
+      logger.error('Search threats error:', error);
+      next(error);
+    }
+  },
+
+  async getThreatStats(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const stats = await Threat.findAll({
+        attributes: [
+          'category',
+          'severity',
+          [Threat.sequelize!.fn('COUNT', '*'), 'count']
+        ],
+        where: { isActive: true },
+        group: ['category', 'severity'],
+        raw: true,
+      });
+
+      const totalThreats = await Threat.count({ where: { isActive: true } });
+      const activeThreats = await Threat.count({ 
+        where: { 
+          isActive: true,
+          lastSeen: { [Op.gte]: new Date(Date.now() - 24 * 60 * 60 * 1000) }
+        } 
+      });
+
+      res.json({
+        totalThreats,
+        activeThreats,
+        stats,
+      });
+    } catch (error) {
+      logger.error('Get threat stats error:', error);
+      next(error);
+    }
+  },
+
+  async bulkCreateThreats(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const { threats } = req.body;
-      
+
       if (!Array.isArray(threats) || threats.length === 0) {
         res.status(400).json({ error: 'Threats array is required' });
         return;
       }
 
-      const results = await Promise.allSettled(
-        threats.map(async (threatData: any) => {
-          const existingThreat = await Threat.findOne({
-            where: {
-              value: threatData.value,
-              type: threatData.type,
-            },
-          });
+      const createdThreats = await Threat.bulkCreate(threats, {
+        updateOnDuplicate: ['count', 'lastSeen', 'severity', 'confidence'],
+        returning: true,
+      });
 
-          if (existingThreat) {
-            return existingThreat.update({
-              ...threatData,
-              lastSeen: new Date(),
-            });
-          }
+      logger.info(`Bulk created ${createdThreats.length} threats`);
 
-          return Threat.create(threatData);
-        })
-      );
-
-      const successful = results.filter(r => r.status === 'fulfilled').length;
-      const failed = results.filter(r => r.status === 'rejected').length;
-
-      logger.info(`Bulk threat operation completed: ${successful} successful, ${failed} failed`);
-
-      res.json({
-        message: 'Bulk operation completed',
-        successful,
-        failed,
-        total: threats.length,
+      res.status(201).json({
+        message: `${createdThreats.length} threats processed`,
+        threats: createdThreats,
       });
     } catch (error) {
-      logger.error('Error in bulk create threats:', error);
+      logger.error('Bulk create threats error:', error);
       next(error);
     }
-  }
+  },
 
-  async bulkDeleteThreats(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  async bulkDeleteThreats(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const { ids } = req.body;
-      
+
       if (!Array.isArray(ids) || ids.length === 0) {
-        res.status(400).json({ error: 'IDs array is required' });
+        res.status(400).json({ error: 'Threat IDs array is required' });
         return;
       }
 
       const deletedCount = await Threat.destroy({
-        where: {
-          id: {
-            [Op.in]: ids,
-          },
-        },
+        where: { id: { [Op.in]: ids } }
       });
 
       logger.info(`Bulk deleted ${deletedCount} threats`);
 
       res.json({
-        message: 'Bulk delete completed',
+        message: `${deletedCount} threats deleted`,
         deletedCount,
       });
     } catch (error) {
-      logger.error('Error in bulk delete threats:', error);
+      logger.error('Bulk delete threats error:', error);
       next(error);
     }
-  }
-}
-
-export const threatController = new ThreatController();
+  },
+};

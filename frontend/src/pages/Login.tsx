@@ -34,7 +34,6 @@ const Login: React.FC = () => {
     setLoading(true);
     setError('');
 
-    // Validation for sign up
     if (isSignUp) {
       if (formData.password !== formData.confirmPassword) {
         setError('Passwords do not match');
@@ -75,7 +74,6 @@ const Login: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
-      {/* Background Effects */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -inset-10 opacity-50">
           <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
@@ -84,11 +82,9 @@ const Login: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="relative w-full max-w-4xl">
         <div className="grid lg:grid-cols-2 gap-8 items-center">
           
-          {/* Left Side - Branding */}
           <div className="hidden lg:block text-white space-y-6">
             <div className="space-y-4">
               <div className="flex items-center space-x-3">
@@ -135,7 +131,6 @@ const Login: React.FC = () => {
             </div>
           </div>
 
-          {/* Right Side - Auth Form */}
           <div className="w-full">
             <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-8 shadow-2xl">
               <div className="text-center mb-8">

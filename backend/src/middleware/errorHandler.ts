@@ -1,42 +1,73 @@
-import { Request, Response, NextFunction } from 'express';
+﻿import { Request, Response, NextFunction } from 'express';
+import { ValidationError } from 'sequelize';
 import { logger } from '../utils/logger';
 
-export interface AppError extends Error {
+export interface ApiError extends Error {
   statusCode?: number;
-  isOperational?: boolean;
+  code?: string;
+  details?: any;
 }
 
+export const createError = (
+  message: string, 
+  statusCode: number = 500, 
+  code?: string, 
+  details?: any
+): ApiError => {
+  const error = new Error(message) as ApiError;
+  error.statusCode = statusCode;
+  error.code = code;
+  error.details = details;
+  return error;
+};
+
 export const errorHandler = (
-  error: AppError,
+  err: ApiError | ValidationError | Error,
   req: Request,
   res: Response,
   next: NextFunction
 ): void => {
-  const statusCode = error.statusCode || 500;
-  const message = error.message || 'Internal Server Error';
+  let statusCode = 500;
+  let message = 'Internal Server Error';
+  let code: string | undefined;
+  let details: any;
 
-  // Log the error
-  logger.error(`Error ${statusCode}: ${message}`, {
-    stack: error.stack,
+  if (err instanceof ValidationError) {
+    statusCode = 400;
+    message = 'Validation Error';
+    code = 'VALIDATION_ERROR';
+    details = err.errors?.map(error => ({
+      field: error.path,
+      message: error.message,
+      value: error.value,
+    }));
+  } else if ('statusCode' in err && err.statusCode) {
+    statusCode = err.statusCode;
+    message = err.message;
+    code = (err as ApiError).code;
+    details = (err as ApiError).details;
+  } else if (err.message) {
+    message = err.message;
+  }
+
+  logger.error(`API Error: ${message}`, {
+    statusCode,
+    code,
+    details,
+    stack: err.stack,
     url: req.url,
     method: req.method,
     ip: req.ip,
   });
 
-  // Don't expose internal errors in production
-  const responseMessage = process.env.NODE_ENV === 'production' && statusCode >= 500
-    ? 'Internal Server Error'
-    : message;
+  const isDevelopment = process.env.NODE_ENV === 'development';
 
-  res.status(statusCode).json({
-    error: responseMessage,
-    ...(process.env.NODE_ENV === 'development' && { stack: error.stack }),
-  });
-};
+  const errorResponse: any = {
+    error: message,
+    ...(code && { code }),
+    ...(details && { details }),
+    ...(isDevelopment && { stack: err.stack }),
+  };
 
-export const createError = (message: string, statusCode: number = 500): AppError => {
-  const error = new Error(message) as AppError;
-  error.statusCode = statusCode;
-  error.isOperational = true;
-  return error;
+  res.status(statusCode).json(errorResponse);
 };

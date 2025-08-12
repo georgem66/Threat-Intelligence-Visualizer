@@ -1,33 +1,51 @@
-interface Logger {
-  info: (message: string, ...args: any[]) => void;
-  error: (message: string, error?: any) => void;
-  warn: (message: string, ...args: any[]) => void;
-  debug: (message: string, ...args: any[]) => void;
+﻿interface LogLevel {
+  ERROR: number;
+  WARN: number;
+  INFO: number;
+  DEBUG: number;
 }
 
-class SimpleLogger implements Logger {
-  private formatMessage(level: string, message: string): string {
+const LOG_LEVELS: LogLevel = {
+  ERROR: 0,
+  WARN: 1,
+  INFO: 2,
+  DEBUG: 3,
+};
+
+const LOG_LEVEL = LOG_LEVELS[process.env.LOG_LEVEL as keyof LogLevel] ?? LOG_LEVELS.INFO;
+
+class Logger {
+  private formatMessage(level: string, message: string, ...args: any[]): string {
     const timestamp = new Date().toISOString();
-    return `[${timestamp}] ${level.toUpperCase()}: ${message}`;
+    const formattedMessage = args.length > 0 ? `${message} ${args.map(arg => 
+      typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+    ).join(' ')}` : message;
+    return `[${timestamp}] [${level}] ${formattedMessage}`;
   }
 
-  info(message: string, ...args: any[]): void {
-    console.log(this.formatMessage('info', message), ...args);
-  }
-
-  error(message: string, error?: any): void {
-    console.error(this.formatMessage('error', message), error || '');
+  error(message: string, ...args: any[]): void {
+    if (LOG_LEVEL >= LOG_LEVELS.ERROR) {
+      console.error(this.formatMessage('ERROR', message, ...args));
+    }
   }
 
   warn(message: string, ...args: any[]): void {
-    console.warn(this.formatMessage('warn', message), ...args);
+    if (LOG_LEVEL >= LOG_LEVELS.WARN) {
+      console.warn(this.formatMessage('WARN', message, ...args));
+    }
+  }
+
+  info(message: string, ...args: any[]): void {
+    if (LOG_LEVEL >= LOG_LEVELS.INFO) {
+      console.info(this.formatMessage('INFO', message, ...args));
+    }
   }
 
   debug(message: string, ...args: any[]): void {
-    if (process.env.NODE_ENV !== 'production') {
-      console.debug(this.formatMessage('debug', message), ...args);
+    if (LOG_LEVEL >= LOG_LEVELS.DEBUG) {
+      console.debug(this.formatMessage('DEBUG', message, ...args));
     }
   }
 }
 
-export const logger = new SimpleLogger();
+export const logger = new Logger();

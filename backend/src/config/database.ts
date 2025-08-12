@@ -1,4 +1,4 @@
-import { Sequelize } from 'sequelize';
+﻿import { Sequelize } from 'sequelize';
 import { logger } from '../utils/logger';
 
 interface DbConfigBase {

@@ -1,56 +1,123 @@
-import { Router } from 'express';
-import { authMiddleware, requireRole } from '../middleware/auth';
+﻿import { Router, Request, Response, NextFunction } from 'express';
 import { User } from '../models/User';
-import { Request, Response, NextFunction } from 'express';
+import { authMiddleware, requireRole, AuthRequest } from '../middleware/auth';
+import { logger } from '../utils/logger';
 
 const router = Router();
 
-// All user routes require authentication
 router.use(authMiddleware);
 
-// Get current user profile
-router.get('/me', async (req: any, res: Response, next: NextFunction) => {
+router.get('/me', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const user = req.user;
-    res.json({
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        createdAt: user.createdAt,
-        lastLoginAt: user.lastLoginAt,
-      },
+    if (!req.user) {
+      res.status(401).json({ error: 'User not authenticated' });
+      return;
+    }
+
+    const user = await User.findByPk(req.user.id, {
+      attributes: { exclude: ['password'] }
     });
+
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    res.json({ user });
   } catch (error) {
+    logger.error('Get current user error:', error);
     next(error);
   }
 });
 
-// Admin only: Get all users
 router.get('/', requireRole('admin'), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
-    const offset = (page - 1) * limit;
+    const { page = 1, limit = 20, role, isActive } = req.query;
+    const offset = (Number(page) - 1) * Number(limit);
+    
+    const where: any = {};
+    if (role) where.role = role;
+    if (isActive !== undefined) where.isActive = isActive === 'true';
 
-    const { rows: users, count } = await User.findAndCountAll({
-      attributes: ['id', 'username', 'email', 'role', 'createdAt', 'lastLoginAt', 'isActive'],
-      order: [['createdAt', 'DESC']],
-      limit,
+    const users = await User.findAndCountAll({
+      where,
+      attributes: { exclude: ['password'] },
+      limit: Number(limit),
       offset,
+      order: [['createdAt', 'DESC']],
     });
 
     res.json({
-      users,
+      users: users.rows,
       pagination: {
-        page,
-        limit,
-        total: count,
-        totalPages: Math.ceil(count / limit),
+        page: Number(page),
+        limit: Number(limit),
+        total: users.count,
+        pages: Math.ceil(users.count / Number(limit)),
       },
     });
   } catch (error) {
+    logger.error('Get users error:', error);
+    next(error);
+  }
+});
+
+router.put('/:id', requireRole('admin'), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const { role, isActive } = req.body;
+
+    const user = await User.findByPk(id);
+    
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    await user.update({
+      ...(role && { role }),
+      ...(isActive !== undefined && { isActive }),
+    });
+
+    const updatedUser = await User.findByPk(id, {
+      attributes: { exclude: ['password'] }
+    });
+
+    logger.info(`User updated: ID ${id}`);
+
+    res.json({
+      message: 'User updated successfully',
+      user: updatedUser,
+    });
+  } catch (error) {
+    logger.error('Update user error:', error);
+    next(error);
+  }
+});
+
+router.delete('/:id', requireRole('admin'), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+
+    if (Number(id) === (req as AuthRequest).user?.id) {
+      res.status(400).json({ error: 'Cannot delete your own account' });
+      return;
+    }
+
+    const user = await User.findByPk(id);
+    
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    await user.destroy();
+
+    logger.info(`User deleted: ID ${id}`);
+
+    res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    logger.error('Delete user error:', error);
     next(error);
   }
 });

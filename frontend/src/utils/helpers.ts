@@ -1,17 +1,7 @@
-/**
- * Utility functions for common operations
- */
-
-/**
- * Format numbers with proper locale formatting
- */
 export const formatNumber = (num: number): string => {
   return new Intl.NumberFormat('en-US').format(num);
 };
 
-/**
- * Format date with relative time
- */
 export const formatRelativeTime = (date: Date | string): string => {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   const now = new Date();
@@ -28,24 +18,15 @@ export const formatRelativeTime = (date: Date | string): string => {
   return dateObj.toLocaleDateString();
 };
 
-/**
- * Capitalize first letter of a string
- */
 export const capitalize = (str: string): string => {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 };
 
-/**
- * Truncate text with ellipsis
- */
 export const truncateText = (text: string, maxLength: number): string => {
   if (text.length <= maxLength) return text;
   return text.substr(0, maxLength) + '...';
 };
 
-/**
- * Generate random color for charts
- */
 export const generateColors = (count: number): string[] => {
   const colors = [
     '#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6',
@@ -59,9 +40,6 @@ export const generateColors = (count: number): string[] => {
   return result;
 };
 
-/**
- * Debounce function for search inputs
- */
 export const debounce = <T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
@@ -73,9 +51,6 @@ export const debounce = <T extends (...args: unknown[]) => unknown>(
   };
 };
 
-/**
- * Storage utility with error handling
- */
 export const storage = {
   get: (key: string): string | null => {
     try {
@@ -105,16 +80,10 @@ export const storage = {
   }
 };
 
-/**
- * Check if value is not null or undefined
- */
 export const isNotNull = <T>(value: T | null | undefined): value is T => {
   return value !== null && value !== undefined;
 };
 
-/**
- * Safe JSON parse with fallback
- */
 export const safeJsonParse = <T>(jsonString: string, fallback: T): T => {
   try {
     return JSON.parse(jsonString);

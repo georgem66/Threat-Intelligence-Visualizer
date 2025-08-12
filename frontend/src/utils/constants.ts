@@ -1,7 +1,3 @@
-/**
- * Application constants
- */
-
 export const APP_CONFIG = {
   name: 'Threat Intelligence Visualizer',
   version: '1.0.0',

@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+﻿import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import { validationResult } from 'express-validator';
@@ -10,11 +10,11 @@ import { logger } from '../utils/logger';
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 
-interface AuthenticatedRequest extends Request {
+export interface AuthRequest extends Request {
   user?: User;
 }
 
-class AuthController {
+export const authController = {
   async register(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const errors = validationResult(req);
@@ -25,7 +25,6 @@ class AuthController {
 
       const { username, email, password, role = 'viewer' } = req.body;
 
-      // Check if user already exists
       const existingUser = await User.findOne({
         where: {
           [Op.or]: [{ email }, { username }],
@@ -37,21 +36,19 @@ class AuthController {
         return;
       }
 
-      // Hash password
       const saltRounds = 12;
       const passwordHash = await bcrypt.hash(password, saltRounds);
 
-      // Create user
       const user = await User.create({
         username,
         email,
-        passwordHash,
+        password: passwordHash,
         role,
-      } as any);
+        isActive: true,
+      });
 
-      // Generate JWT token
       const token = jwt.sign(
-        { userId: user.id, role: user.role },
+        { id: user.id, username: user.username, role: user.role },
         JWT_SECRET,
         { expiresIn: JWT_EXPIRES_IN } as SignOptions
       );
@@ -72,7 +69,7 @@ class AuthController {
       logger.error('Registration error:', error);
       next(error);
     }
-  }
+  },
 
   async login(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -82,34 +79,33 @@ class AuthController {
         return;
       }
 
-      const { email, password } = req.body;
+      const { username, password } = req.body;
 
-      // Find user
-      const user = await User.findOne({ where: { email } });
+      const user = await User.findOne({
+        where: {
+          [Op.or]: [{ username }, { email: username }],
+          isActive: true,
+        },
+      });
+
       if (!user) {
         res.status(401).json({ error: 'Invalid credentials' });
         return;
       }
 
-      // Check if user is active
-      if (!user.isActive) {
-        res.status(401).json({ error: 'Account is deactivated' });
-        return;
-      }
+      const isPasswordValid = await bcrypt.compare(password, user.password);
 
-      // Verify password
-      const isValidPassword = await bcrypt.compare(password, user.passwordHash);
-      if (!isValidPassword) {
+      if (!isPasswordValid) {
         res.status(401).json({ error: 'Invalid credentials' });
         return;
       }
 
-      // Update last login
-      await user.update({ lastLoginAt: new Date() });
+      await user.update({
+        lastLogin: new Date(),
+      });
 
-      // Generate JWT token
       const token = jwt.sign(
-        { userId: user.id, role: user.role },
+        { id: user.id, username: user.username, role: user.role },
         JWT_SECRET,
         { expiresIn: JWT_EXPIRES_IN } as SignOptions
       );
@@ -123,6 +119,7 @@ class AuthController {
           username: user.username,
           email: user.email,
           role: user.role,
+          lastLogin: user.lastLogin,
         },
         token,
       });
@@ -130,46 +127,65 @@ class AuthController {
       logger.error('Login error:', error);
       next(error);
     }
-  }
+  },
 
   async refresh(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const authHeader = req.headers.authorization;
+      
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        res.status(401).json({ error: 'No token provided' });
+        res.status(401).json({ error: 'Authorization token required' });
         return;
       }
 
       const token = authHeader.substring(7);
-      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET, { ignoreExpiration: true }) as { 
+          id: number; 
+          username: string; 
+          role: string; 
+        };
+        
+        const user = await User.findByPk(decoded.id);
+        
+        if (!user || !user.isActive) {
+          res.status(401).json({ error: 'User not found or inactive' });
+          return;
+        }
 
-      const user = await User.findByPk(decoded.userId);
-      if (!user || !user.isActive) {
+        const newToken = jwt.sign(
+          { id: user.id, username: user.username, role: user.role },
+          JWT_SECRET,
+          { expiresIn: JWT_EXPIRES_IN } as SignOptions
+        );
+
+        res.json({
+          message: 'Token refreshed successfully',
+          token: newToken,
+          user: {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            role: user.role,
+          },
+        });
+      } catch (jwtError) {
         res.status(401).json({ error: 'Invalid token' });
         return;
       }
-
-      const newToken = jwt.sign(
-        { userId: user.id, role: user.role },
-        JWT_SECRET,
-        { expiresIn: JWT_EXPIRES_IN } as SignOptions
-      );
-
-      res.json({
-        message: 'Token refreshed',
-        token: newToken,
-      });
     } catch (error) {
       logger.error('Token refresh error:', error);
-      res.status(401).json({ error: 'Invalid token' });
+      next(error);
     }
-  }
+  },
 
-  async logout(req: Request, res: Response) {
-    // In a real application, you might want to blacklist the token
-    // For now, we'll just send a success response
-    res.json({ message: 'Logout successful' });
-  }
-}
-
-export const authController = new AuthController();
+  async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      res.json({ message: 'Logout successful' });
+    } catch (error) {
+      logger.error('Logout error:', error);
+      next(error);
+    }
+  },
+};

@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -8,7 +8,6 @@ import { errorHandler } from './middleware/errorHandler';
 import { logger } from './utils/logger';
 import { threatIntelligenceService } from './services/threatIntelligence';
 
-// Import routes
 import authRoutes from './routes/auth';
 import threatRoutes from './routes/threats';
 import userRoutes from './routes/users';
@@ -17,7 +16,6 @@ import analyticsRoutes from './routes/analytics';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Security middleware
 app.use(helmet({
   crossOriginEmbedderPolicy: false,
   contentSecurityPolicy: {
@@ -30,7 +28,6 @@ app.use(helmet({
   },
 }));
 
-// CORS configuration
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? ['https://your-frontend-domain.com'] 
@@ -38,21 +35,18 @@ app.use(cors({
   credentials: true,
 }));
 
-// Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  windowMs: 15 * 60 * 1000,
+  max: 100,
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
 });
 app.use(limiter);
 
-// Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({ 
     status: 'OK', 
@@ -61,27 +55,22 @@ app.get('/health', (req, res) => {
   });
 });
 
-// API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/threats', threatRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/analytics', analyticsRoutes);
 
-// 404 handler
 app.use('*', (req, res) => {
   res.status(404).json({ error: 'Endpoint not found' });
 });
 
-// Global error handler
 app.use(errorHandler);
 
-// Database connection and server startup
 async function startServer() {
   try {
     await sequelize.authenticate();
     logger.info('Database connection established successfully.');
     
-    // Sync database models
     await sequelize.sync({ alter: false });
     logger.info('Database models synchronized.');
     
@@ -95,7 +84,6 @@ async function startServer() {
   }
 }
 
-// Graceful shutdown
 process.on('SIGTERM', async () => {
   logger.info('SIGTERM received, shutting down gracefully...');
   await sequelize.close();
