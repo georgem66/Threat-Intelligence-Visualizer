@@ -49,10 +49,8 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
             <Bell className="h-5 w-5" aria-hidden="true" />
           </button>
 
-          {/* Separator */}
           <div className="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-200 dark:lg:bg-gray-700" aria-hidden="true" />
 
-          {/* Profile dropdown */}
           <div className="flex items-center gap-x-4">
             <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
               {user?.username}

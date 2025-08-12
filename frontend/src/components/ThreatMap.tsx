@@ -59,7 +59,6 @@ const ThreatMap: React.FC = () => {
     return 4;
   };
 
-  // Group threats by location to avoid overlapping markers
   const groupedThreats = geoThreats.reduce((acc, threat) => {
     const key = `${threat.latitude},${threat.longitude}`;
     if (!acc[key]) {

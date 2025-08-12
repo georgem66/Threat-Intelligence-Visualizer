@@ -8,10 +8,8 @@ const Layout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
-      {/* Sidebar */}
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
-      {/* Main content */}
       <div className="lg:pl-64">
         <Header onMenuClick={() => setSidebarOpen(true)} />
         

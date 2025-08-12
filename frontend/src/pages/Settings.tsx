@@ -17,7 +17,6 @@ const SettingsPage: React.FC = () => {
         </p>
       </div>
 
-      {/* User Profile */}
       <div className="card p-6">
         <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
           User Profile
@@ -52,7 +51,6 @@ const SettingsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Theme Settings */}
       <div className="card p-6">
         <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
           Appearance
@@ -84,7 +82,6 @@ const SettingsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* About */}
       <div className="card p-6">
         <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
           About

@@ -88,7 +88,6 @@ const Dashboard: React.FC = () => {
 
       {dashboardData && (
         <>
-          {/* Metrics */}
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <MetricCard
               title="Total Threats"
@@ -116,9 +115,7 @@ const Dashboard: React.FC = () => {
             />
           </div>
 
-          {/* Charts and Map */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            {/* Threat Map */}
             <div className="card p-6">
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
                 Geographic Distribution
@@ -126,7 +123,6 @@ const Dashboard: React.FC = () => {
               <ThreatMap />
             </div>
 
-            {/* Severity Chart */}
             <div className="card p-6">
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
                 Threat Severity
@@ -138,7 +134,6 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Category Distribution and Recent Activity */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <div className="card p-6">
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
