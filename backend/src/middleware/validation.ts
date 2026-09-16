@@ -18,8 +18,8 @@ export const validateAuth = {
       .withMessage('Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character'),
     body('role')
       .optional()
-      .isIn(['admin', 'analyst', 'viewer'])
-      .withMessage('Role must be one of: admin, analyst, viewer'),
+      .isIn(['viewer'])
+      .withMessage('Public registration only supports the viewer role'),
   ],
   login: [
     body('username')

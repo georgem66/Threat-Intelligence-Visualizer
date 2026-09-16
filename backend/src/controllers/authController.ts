@@ -23,7 +23,7 @@ export const authController = {
         return;
       }
 
-      const { username, email, password, role = 'viewer' } = req.body;
+      const { username, email, password } = req.body;
 
       const existingUser = await User.findOne({
         where: {
@@ -43,7 +43,7 @@ export const authController = {
         username,
         email,
         password: passwordHash,
-        role,
+        role: 'viewer',
         isActive: true,
       });
 
