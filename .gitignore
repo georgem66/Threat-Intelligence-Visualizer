@@ -1,48 +1,71 @@
-# Dependencies
+# Dependencies (already tracked vendor files require a separate cleanup)
 node_modules/
-*/node_modules/
+bower_components/
 
-# Build outputs
+# Build, coverage, and tool caches
 dist/
 build/
-*/dist/
-*/build/
+coverage/
+.nyc_output/
+*.tsbuildinfo
+.vite/
+.cache/
+.eslintcache
+.npm/
+.pnpm-store/
+.yarn/cache/
 
-# Environment variables
+# Local configuration and secrets; keep sanitized examples
 .env
-.env.local
-.env.production
-.env.development
+.env.*
 *.env
+!.env.example
+!.env.*.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
 
-# Logs
-logs
+# Logs and runtime files
+logs/
 *.log
+*.pid
+*.pid.lock
+*.seed
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# OS generated files
+# Local databases and dumps
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.sqlite3-*
+*.dump
+*.sql.gz
+
+# Temporary files and editor state
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Operating system metadata
 .DS_Store
 .DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
-ehthumbs.db
 Thumbs.db
-
-# Editor directories and files
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Database
-*.db
-*.sqlite
-
-# Temporary files
-tmp/
-temp/
+ehthumbs.db
+Desktop.ini

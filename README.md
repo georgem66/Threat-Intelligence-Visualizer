@@ -1,177 +1,75 @@
-# Threat Intelligence Visualizer 
+# Threat Intelligence Visualizer
 
-Welcome to the Threat Intelligence Visualizer - your comprehensive cybersecurity companion for monitoring and analyzing digital threats in real-time. Whether you're a security analyst, IT professional, or cybersecurity enthusiast, this platform helps you stay ahead of emerging threats with powerful visualization tools and intelligent analytics.
+A work-in-progress portfolio prototype for presenting threat records through a React dashboard, charts, and a geographic map. It is not a production security platform or a live threat feed.
 
-## What Does This Software Do? 
+## What's in the repository
 
-Imagine having a crystal ball for cybersecurity threats. Our Threat Intelligence Visualizer does exactly that by:
+- `frontend/`: React 19, TypeScript, Vite 7, Tailwind CSS, Chart.js and Leaflet. Includes login/registration screens, dashboard components, theme switching and settings.
+- `backend/`: Express 5 and TypeScript, PostgreSQL via Sequelize, JWT authentication, and routes for users, threats and analytics.
+- `backend/src/services/threatIntelligence.ts`: fixture-based collection methods and scheduling code. Names such as AbuseIPDB and PhishTank identify mock data, not working external integrations.
 
-- **Collecting threat data** from multiple intelligence sources automatically
-- **Visualizing threats** on an interactive world map so you can see where attacks are coming from
-- **Analyzing patterns** with beautiful charts and graphs that make complex data easy to understand  
-- **Monitoring in real-time** so you're always aware of the latest security landscape
-- **Providing insights** through dashboards that help you make informed security decisions
+## Local development
 
-Think of it as your personal cybersecurity command center that turns overwhelming threat data into actionable intelligence.
+Use a maintained Node.js 22 release (22.12+), npm, and a local PostgreSQL installation. The locked Vite version requires Node 20.19+ or 22.12+; PostgreSQL version compatibility has not been tested. There is no root package or combined startup script.
 
-## Who Is This For? 
+These are the commands declared by the project, not a verified end-to-end quick start. Read the known limitations below before attempting to run it. Keep the backend in an isolated local environment; it has not been hardened for public access.
 
-- **Security Analysts** who need to monitor and respond to threats quickly
-- **IT Administrators** protecting their organization's digital assets
-- **Cybersecurity Students** learning about threat intelligence and visualization
-- **Security Teams** collaborating on threat analysis and incident response
-- **Anyone** interested in understanding the global cybersecurity landscape
+1. Create a disposable PostgreSQL database named `threat_intelligence_dev`, owned by your local database role. Configure the role and password below. Startup calls `sequelize.sync({ alter: false })`; no migration or seed command is supplied.
+2. Configure and install the backend, from the repository root:
 
-## Key Features 
+   ```sh
+   cd backend
+   cp .env.example .env
+   # Edit .env: replace DB_PASSWORD and JWT_SECRET, and set your database role.
+   # Generate a unique JWT secret locally with: openssl rand -hex 32
+   npm ci
+   npm run build
+   node --env-file=.env dist/server.js
+   ```
 
-### **Interactive Threat Map**
-See exactly where threats are coming from with our beautiful world map. Click on any location to get detailed information about threat activity in that region.
+   `npm start` runs the compiled server but requires environment variables to be supplied externally. The code and `npm run dev` do not load `.env` automatically. For development with explicit loading:
 
-### **Smart Analytics Dashboard**
-Get the big picture with:
-- Real-time threat counts and statistics
-- Severity level breakdowns (Critical, High, Medium, Low)
-- Threat category analysis (Malware, Phishing, Botnets, etc.)
-- Time-based trends to spot patterns
+   ```sh
+   node --env-file=.env ./node_modules/nodemon/bin/nodemon.js src/server.ts
+   ```
 
-### **Secure Multi-User Access**
-- Role-based access control (Admin, Analyst, Viewer)
-- JWT-based authentication for enterprise security
-- Personal dashboards and preferences
+   The API defaults to port 3001, with a `GET /health` route. `NODE_ENV` supports `development` and `production` only. All consumed backend settings are documented in `.env.example`; no feed API keys are currently consumed.
 
-### **Modern User Experience**
-- Dark and light theme modes
-- Responsive design that works on any device
-- Intuitive interface that doesn't require a cybersecurity PhD to use
+3. In a separate terminal, from the repository root:
 
-## System Requirements 
+   ```sh
+   cd frontend
+   npm ci
+   npm run dev -- --host localhost
+   ```
 
-### For Users (Running the Application):
-- **Web Browser**: Chrome, Firefox, Safari, or Edge (latest versions)
-- **Internet Connection**: For real-time threat data updates
-- **Screen Resolution**: 1024x768 minimum (works great on mobile too!)
+   Open http://localhost:5173. The client defaults to `http://localhost:3001/api`; optionally set `VITE_API_URL` in `frontend/.env.local` before starting Vite. Vite exposes `VITE_*` values to the browser: never put secrets there. Default development CORS permits localhost ports 5173 and 3000. The map requests tiles from OpenStreetMap and needs network access.
 
-### For Developers (Setting Up the System):
-- **Node.js**: Version 18 or higher ([Download here](https://nodejs.org/))
-- **PostgreSQL**: Version 12 or higher ([Download here](https://www.postgresql.org/download/))
-- **npm**: Comes with Node.js
-- **Git**: For cloning the repository
-- **Operating System**: Windows, macOS, or Linux
+## Known limitations
 
-## How to Get Started 
+- No default account or seed script exists. Historical README demo credentials were documentation only, not a supported login.
+- Frontend login sends `email`; backend validation/controller expect `username`. The dashboard also expects nested `overview`, `charts` and `recentActivity` fields, while the backend returns a different, flat payload. These are source-confirmed integration mismatches.
+- Threat Management and Advanced Analytics pages are “coming soon” placeholders. Password-reset client methods have no corresponding backend routes.
+- Collection methods return static fixtures. Startup does not call the collection scheduler; dashboard/map requests run on mount, not as a live stream. Waiting after startup does not create live feed data.
+- The backend's unnamed `app.use('*', ...)` catch-all is incompatible with Express 5 route syntax and needs correction before successful startup. Runtime behavior was not exercised in this review.
+- Security work remains: registration role assignment, token lifecycle and fallback signing configuration need review. Production database TLS disables certificate verification and production CORS still contains a placeholder domain. Do not deploy this unchanged or use real credentials/data for demonstrations.
 
-### Step 1: Get the Code
-```bash
-git clone https://github.com/your-username/Threat-Intelligence-Visualizer.git
-cd Threat-Intelligence-Visualizer
-```
+## Build, lint and test status
 
-### Step 2: Set Up the Database
-1. Install PostgreSQL on your system
-2. Create a new database called `threat_intelligence`
-3. Note down your database credentials (username, password, host, port)
+Run commands inside the indicated package:
 
-### Step 3: Configure the Backend
-```bash
-cd backend
-npm install
-```
+| Package | Command | Purpose / current review result |
+| --- | --- | --- |
+| backend | `npm run build` | TypeScript to `dist/`; blocked locally because `tsc` was not installed |
+| backend | `npm test` | Placeholder script; deliberately exits 1 |
+| frontend | `npm run build` | TypeScript project build and Vite bundle; blocked locally because `tsc` was not installed |
+| frontend | `npm run lint` | ESLint; blocked locally because `eslint` was not installed |
+| frontend | `npm run preview -- --host localhost` | Preview an existing build on port 4173; not a production server |
 
-Create a `.env` file in the backend folder with your settings:
-```env
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=threat_intelligence
-DB_USERNAME=your_postgres_username
-DB_PASSWORD=your_postgres_password
-JWT_SECRET=make-this-a-very-long-random-string
-PORT=3001
-NODE_ENV=development
-```
+The frontend has no test script. No packages were installed during this documentation review, and neither build success nor functional tests are claimed. A new security workflow scans reachable Git history with redacted Gitleaks output and audits both lockfiles for high/critical advisories. It does not run application tests and has not yet been executed in GitHub Actions.
 
-Start the backend server:
-```bash
-npm run dev
-```
+`node_modules/` is ignored, but the reviewed history still contains tracked backend dependencies. Ignore rules do not remove already tracked files; history cleanup is a separate maintenance task. Keep package lockfiles for reproducible installs.
 
-### Step 4: Set Up the Frontend
-Open a new terminal window:
-```bash
-cd frontend
-npm install
-```
+## License and attribution
 
-Create a `.env` file in the frontend folder:
-```env
-VITE_API_URL=http://localhost:3001/api
-```
-
-Start the frontend:
-```bash
-npm run dev
-```
-
-### Step 5: Access Your Application
-Open your web browser and go to `http://localhost:5173`
-
-**Default Login Credentials:**
-- Email: `admin@example.com`
-- Password: `Admin123!`
-
-## How to Use the Software 📖
-
-### Getting Started
-1. **Login**: Use the demo credentials or create a new account
-2. **Explore the Dashboard**: This is your main command center showing threat overview
-3. **Check the Map**: Click on different countries to see threat details
-4. **Analyze Charts**: Use the severity and category charts to understand threat patterns
-5. **View Recent Activity**: See the latest threats detected by the system
-
-### Understanding the Data
-- **Threat Severity**: 
-  - 🔴 Critical: Immediate action required
-  - 🟠 High: Important threats to monitor
-  - 🟡 Medium: Noteworthy security events
-  - 🟢 Low: Minor security observations
-
-- **Threat Categories**:
-  - Malware: Malicious software and viruses
-  - Phishing: Fake websites trying to steal information
-  - Botnets: Networks of infected computers
-  - DDoS: Attacks that overwhelm websites
-  - And more!
-
-### Advanced Features
-- **Analytics Page**: Deep dive into threat trends and patterns
-- **Settings**: Customize your experience and switch between themes
-- **User Management**: Admins can manage team access and roles
-
-## Troubleshooting Common Issues 🔧
-
-**Problem**: Can't connect to database
-**Solution**: Make sure PostgreSQL is running and your `.env` credentials are correct
-
-**Problem**: Frontend won't start
-**Solution**: Make sure the backend is running first, then check your `VITE_API_URL` setting
-
-**Problem**: No threat data showing
-**Solution**: The system needs a few minutes to collect initial data after first startup
-
-## Technical Details 🛠️
-
-**Frontend Technology:**
-- React 19 with TypeScript for robust user interfaces
-- Vite for lightning-fast development
-- TailwindCSS for beautiful, responsive styling
-- Chart.js for interactive data visualizations
-- Leaflet for the interactive world map
-
-**Backend Technology:**
-- Node.js with Express.js for the API server
-- PostgreSQL database for reliable data storage
-- Sequelize ORM for database management
-- JWT authentication for secure access
-- Automated threat intelligence collection
-
----
-
+Project code is provided under the [MIT License](LICENSE). Original repository authorship by Andile Mushwana (`georgem66`) and contributions recorded in Git history, including `copilot-swe-agent[bot]`, are retained. Backend package-level license metadata is aligned to MIT; dependency licenses are unchanged. OpenStreetMap contributors' attribution remains in the map component; map data, tiles and third-party libraries retain their own terms.

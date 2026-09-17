@@ -43,14 +43,14 @@ router.get('/dashboard', async (req: Request, res: Response, next: NextFunction)
 
     const topCountries = await Threat.findAll({
       attributes: [
-        [Threat.sequelize!.json('geolocation.country'), 'country'],
+        [Threat.sequelize!.fn('jsonb_extract_path_text', Threat.sequelize!.col('geolocation'), 'country'), 'country'],
         [Threat.sequelize!.fn('COUNT', '*'), 'count']
       ],
       where: {
         isActive: true,
         'geolocation.country': { [Op.ne]: null }
       },
-      group: [Threat.sequelize!.json('geolocation.country')],
+      group: [Threat.sequelize!.fn('jsonb_extract_path_text', Threat.sequelize!.col('geolocation'), 'country')],
       order: [[Threat.sequelize!.fn('COUNT', '*'), 'DESC']],
       limit: 10,
       raw: true,
@@ -87,7 +87,30 @@ router.get('/dashboard', async (req: Request, res: Response, next: NextFunction)
       raw: true,
     }) as any[];
 
+    const now = new Date();
+    const today = new Date(now);
+    today.setUTCHours(0, 0, 0, 0);
+    const countSince = (start: Date) => Threat.count({
+      where: { isActive: true, createdAt: { [Op.gte]: start } },
+    });
+    const [threatsLast30Days, threatsLast7Days, threatsToday] = await Promise.all([
+      countSince(new Date(now.getTime() - 30 * 86400000)),
+      countSince(new Date(now.getTime() - 7 * 86400000)),
+      countSince(today),
+    ]);
+
     res.json({
+      overview: { totalThreats, threatsLast30Days, threatsLast7Days, threatsToday },
+      charts: {
+        topCountries: topCountries.map(item => ({ country: item.country, count: Number(item.count) })),
+        severityDistribution: severityData,
+        categoryDistribution: Object.fromEntries(topCategories.map(item => [item.category, Number(item.count)])),
+      },
+      recentActivity: recentThreats.map(threat => ({
+        id: String(threat.id), type: 'ip', value: threat.sourceIp,
+        category: threat.category, severity: threat.severity,
+        source: threat.source, createdAt: threat.createdAt,
+      })),
       totalThreats,
       activeThreats,
       criticalThreats: severityData.critical,
@@ -176,10 +199,10 @@ router.get('/geographic', async (req: Request, res: Response, next: NextFunction
   try {
     const geoData = await Threat.findAll({
       attributes: [
-        [Threat.sequelize!.json('geolocation.country'), 'country'],
-        [Threat.sequelize!.json('geolocation.countryCode'), 'countryCode'],
-        [Threat.sequelize!.json('geolocation.latitude'), 'latitude'],
-        [Threat.sequelize!.json('geolocation.longitude'), 'longitude'],
+        [Threat.sequelize!.fn('jsonb_extract_path_text', Threat.sequelize!.col('geolocation'), 'country'), 'country'],
+        [Threat.sequelize!.fn('jsonb_extract_path_text', Threat.sequelize!.col('geolocation'), 'countryCode'), 'countryCode'],
+        [Threat.sequelize!.fn('jsonb_extract_path_text', Threat.sequelize!.col('geolocation'), 'latitude'), 'latitude'],
+        [Threat.sequelize!.fn('jsonb_extract_path_text', Threat.sequelize!.col('geolocation'), 'longitude'), 'longitude'],
         'severity',
         'category',
         [Threat.sequelize!.fn('COUNT', '*'), 'count']
@@ -191,10 +214,10 @@ router.get('/geographic', async (req: Request, res: Response, next: NextFunction
         'geolocation.longitude': { [Op.ne]: null },
       },
       group: [
-        Threat.sequelize!.json('geolocation.country'),
-        Threat.sequelize!.json('geolocation.countryCode'),
-        Threat.sequelize!.json('geolocation.latitude'),
-        Threat.sequelize!.json('geolocation.longitude'),
+        Threat.sequelize!.fn('jsonb_extract_path_text', Threat.sequelize!.col('geolocation'), 'country'),
+        Threat.sequelize!.fn('jsonb_extract_path_text', Threat.sequelize!.col('geolocation'), 'countryCode'),
+        Threat.sequelize!.fn('jsonb_extract_path_text', Threat.sequelize!.col('geolocation'), 'latitude'),
+        Threat.sequelize!.fn('jsonb_extract_path_text', Threat.sequelize!.col('geolocation'), 'longitude'),
         'severity',
         'category'
       ],

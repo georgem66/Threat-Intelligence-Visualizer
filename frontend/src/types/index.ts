@@ -1,5 +1,4 @@
 export interface ApiResponse<T = unknown> {
-export interface ApiResponse<T = unknown> {
   success: boolean;
   data: T;
   error?: string;
@@ -26,7 +25,7 @@ export interface User {
 }
 
 export interface LoginRequest {
-  email: string;
+  username: string;
   password: string;
 }
 
@@ -153,7 +152,7 @@ export interface RecentThreatsProps {
 
 export interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
   isAuthenticated: boolean;

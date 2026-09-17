@@ -51,7 +51,7 @@ const Login: React.FC = () => {
       if (isSignUp) {
         await register(formData.username, formData.email, formData.password);
       } else {
-        await login(formData.email, formData.password);
+        await login(formData.username, formData.password);
       }
     } catch (err: unknown) {
       const error = err as { response?: { data?: { error?: string } } };
@@ -157,7 +157,7 @@ const Login: React.FC = () => {
               )}
 
               <form onSubmit={handleSubmit} className="space-y-6">
-                {isSignUp && (
+                {(
                   <div className="space-y-2">
                     <label className="block text-sm font-medium text-slate-200">
                       Username
@@ -167,7 +167,7 @@ const Login: React.FC = () => {
                       <input
                         type="text"
                         name="username"
-                        required={isSignUp}
+                        required
                         value={formData.username}
                         onChange={handleInputChange}
                         className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
@@ -178,7 +178,7 @@ const Login: React.FC = () => {
                   </div>
                 )}
 
-                <div className="space-y-2">
+                {isSignUp && (<div className="space-y-2">
                   <label className="block text-sm font-medium text-slate-200">
                     Email Address
                   </label>
@@ -195,7 +195,7 @@ const Login: React.FC = () => {
                       disabled={loading}
                     />
                   </div>
-                </div>
+                </div>)}
 
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-slate-200">
@@ -233,7 +233,7 @@ const Login: React.FC = () => {
                       <input
                         type={showConfirmPassword ? 'text' : 'password'}
                         name="confirmPassword"
-                        required={isSignUp}
+                        required
                         value={formData.confirmPassword}
                         onChange={handleInputChange}
                         className="w-full pl-10 pr-12 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"

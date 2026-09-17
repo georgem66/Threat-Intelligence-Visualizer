@@ -18,8 +18,8 @@ interface RegisterRequest {
 }
 
 class AuthService {
-  async login(email: string, password: string): Promise<LoginResponse> {
-    const response = await apiClient.post('/auth/login', { email, password });
+  async login(username: string, password: string): Promise<LoginResponse> {
+    const response = await apiClient.post('/auth/login', { username, password });
     return response.data;
   }
 

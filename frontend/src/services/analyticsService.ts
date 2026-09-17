@@ -8,7 +8,7 @@ class AnalyticsService {
 
   async getTimeSeries(days: number = 30) {
     const response = await apiClient.get('/analytics/timeseries', {
-      params: { days },
+      params: { period: `${days}d` },
     });
     return response.data;
   }
